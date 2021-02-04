@@ -1,0 +1,339 @@
+import pandas as pd
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+from matplotlib import rcParams
+from matplotlib.cm import rainbow
+
+%matplotlib inline
+df = pd.read_csv('dataset.csv')
+df.head()
+age	sex	cp	trestbps	chol	fbs	restecg	thalach	exang	oldpeak	slope	ca	thal	target
+0	63	1	3	145	233	1	0	150	0	2.3	0	0	1	1
+1	37	1	2	130	250	0	1	187	0	3.5	0	0	2	1
+2	41	0	1	130	204	0	0	172	0	1.4	2	0	2	1
+3	56	1	1	120	236	0	1	178	0	0.8	2	0	2	1
+4	57	0	0	120	354	0	1	163	1	0.6	2	0	2	1
+df.shape
+(303, 14)
+df.info()
+<class 'pandas.core.frame.DataFrame'>
+RangeIndex: 303 entries, 0 to 302
+Data columns (total 14 columns):
+age         303 non-null int64
+sex         303 non-null int64
+cp          303 non-null int64
+trestbps    303 non-null int64
+chol        303 non-null int64
+fbs         303 non-null int64
+restecg     303 non-null int64
+thalach     303 non-null int64
+exang       303 non-null int64
+oldpeak     303 non-null float64
+slope       303 non-null int64
+ca          303 non-null int64
+thal        303 non-null int64
+target      303 non-null int64
+dtypes: float64(1), int64(13)
+memory usage: 33.3 KB
+df.describe()
+age	sex	cp	trestbps	chol	fbs	restecg	thalach	exang	oldpeak	slope	ca	thal	target
+count	303.000000	303.000000	303.000000	303.000000	303.000000	303.000000	303.000000	303.000000	303.000000	303.000000	303.000000	303.000000	303.000000	303.000000
+mean	54.366337	0.683168	0.966997	131.623762	246.264026	0.148515	0.528053	149.646865	0.326733	1.039604	1.399340	0.729373	2.313531	0.544554
+std	9.082101	0.466011	1.032052	17.538143	51.830751	0.356198	0.525860	22.905161	0.469794	1.161075	0.616226	1.022606	0.612277	0.498835
+min	29.000000	0.000000	0.000000	94.000000	126.000000	0.000000	0.000000	71.000000	0.000000	0.000000	0.000000	0.000000	0.000000	0.000000
+25%	47.500000	0.000000	0.000000	120.000000	211.000000	0.000000	0.000000	133.500000	0.000000	0.000000	1.000000	0.000000	2.000000	0.000000
+50%	55.000000	1.000000	1.000000	130.000000	240.000000	0.000000	1.000000	153.000000	0.000000	0.800000	1.000000	0.000000	2.000000	1.000000
+75%	61.000000	1.000000	2.000000	140.000000	274.500000	0.000000	1.000000	166.000000	1.000000	1.600000	2.000000	1.000000	3.000000	1.000000
+max	77.000000	1.000000	3.000000	200.000000	564.000000	1.000000	2.000000	202.000000	1.000000	6.200000	2.000000	4.000000	3.000000	1.000000
+df.isnull().sum()
+age         0
+sex         0
+cp          0
+trestbps    0
+chol        0
+fbs         0
+restecg     0
+thalach     0
+exang       0
+oldpeak     0
+slope       0
+ca          0
+thal        0
+target      0
+dtype: int64
+df['target'].value_counts()
+1    165
+0    138
+Name: target, dtype: int64
+df['target'].unique()
+array([1, 0], dtype=int64)
+Feature Selection Techniques
+sns.pairplot(df,hue='target')
+C:\ProgramData\Anaconda3\lib\site-packages\statsmodels\nonparametric\kde.py:487: RuntimeWarning: invalid value encountered in true_divide
+  binned = fast_linbin(X, a, b, gridsize) / (delta * nobs)
+C:\ProgramData\Anaconda3\lib\site-packages\statsmodels\nonparametric\kdetools.py:34: RuntimeWarning: invalid value encountered in double_scalars
+  FAC1 = 2*(np.pi*bw/RANGE)**2
+<seaborn.axisgrid.PairGrid at 0x1d60c2be208>
+
+Univariate : The chi-squared (chi²) statistical test for non-negative features to select 10 of the best features
+from sklearn.feature_selection import SelectKBest
+from sklearn.feature_selection import chi2
+
+X = df.iloc[:,0:13]  #independent columns
+y = df.iloc[:,-1]    #target column 
+y.head()
+0    1
+1    1
+2    1
+3    1
+4    1
+Name: target, dtype: int64
+#apply SelectKBest class to extract top 10 best features
+bestfeatures = SelectKBest(score_func=chi2, k=10)
+fit = bestfeatures.fit(X,y)
+
+dfscores = pd.DataFrame(fit.scores_)
+dfcolumns = pd.DataFrame(X.columns)
+
+#concat two dataframes for better visualization 
+featureScores = pd.concat([dfcolumns,dfscores],axis=1)
+featureScores.columns = ['Specs','Score']  #naming the dataframe columns
+
+featureScores
+Specs	Score
+0	age	23.286624
+1	sex	7.576835
+2	cp	62.598098
+3	trestbps	14.823925
+4	chol	23.936394
+5	fbs	0.202934
+6	restecg	2.978271
+7	thalach	188.320472
+8	exang	38.914377
+9	oldpeak	72.644253
+10	slope	9.804095
+11	ca	66.440765
+12	thal	5.791853
+print(featureScores.nlargest(10,'Score'))  #print 10 best features
+       Specs       Score
+7    thalach  188.320472
+9    oldpeak   72.644253
+11        ca   66.440765
+2         cp   62.598098
+8      exang   38.914377
+4       chol   23.936394
+0        age   23.286624
+3   trestbps   14.823925
+10     slope    9.804095
+1        sex    7.576835
+Feature Importance
+Feature importance gives you a score for each feature of your data, the higher the score more important or relevant is the feature towards your output variable.
+Feature importance is an inbuilt class that comes with Tree Based Classifiers, we will be using Extra Tree Classifier for extracting the top 10 features for the dataset.
+from sklearn.ensemble import ExtraTreesClassifier
+import matplotlib.pyplot as plt
+model = ExtraTreesClassifier()
+model.fit(X,y)
+C:\ProgramData\Anaconda3\lib\site-packages\sklearn\ensemble\forest.py:245: FutureWarning: The default value of n_estimators will change from 10 in version 0.20 to 100 in 0.22.
+  "10 in version 0.20 to 100 in 0.22.", FutureWarning)
+ExtraTreesClassifier(bootstrap=False, class_weight=None, criterion='gini',
+                     max_depth=None, max_features='auto', max_leaf_nodes=None,
+                     min_impurity_decrease=0.0, min_impurity_split=None,
+                     min_samples_leaf=1, min_samples_split=2,
+                     min_weight_fraction_leaf=0.0, n_estimators=10, n_jobs=None,
+                     oob_score=False, random_state=None, verbose=0,
+                     warm_start=False)
+print(model.feature_importances_) #use inbuilt class feature_importances of tree based classifiers
+[0.0731551  0.05912211 0.14355927 0.0617745  0.0658776  0.01449448
+ 0.03057588 0.09253957 0.09892644 0.08151743 0.05850418 0.13725635
+ 0.08269708]
+feat_importances = pd.Series(model.feature_importances_, index=X.columns)
+feat_importances.nlargest(10).plot(kind='barh')
+plt.show()
+
+Correlation Matrix with Heatmap
+Correlation states how the features are related to each other or the target variable. Correlation can be positive (increase in one value of feature increases the value of the target variable) or negative (increase in one value of feature decreases the value of the target variable) Heatmap makes it easy to identify which features are most related to the target variable, we will plot heatmap of correlated features using the seaborn library.
+
+corrmat = df.corr()
+top_corr_features = corrmat.index
+plt.figure(figsize=(20,20))
+#plot heat map
+g=sns.heatmap(df[top_corr_features].corr(),annot=True,cmap="RdYlGn")
+
+df.hist()
+array([[<matplotlib.axes._subplots.AxesSubplot object at 0x000001D616AC6688>,
+        <matplotlib.axes._subplots.AxesSubplot object at 0x000001D616AC8488>,
+        <matplotlib.axes._subplots.AxesSubplot object at 0x000001D616B281C8>,
+        <matplotlib.axes._subplots.AxesSubplot object at 0x000001D616B60288>],
+       [<matplotlib.axes._subplots.AxesSubplot object at 0x000001D616B98388>,
+        <matplotlib.axes._subplots.AxesSubplot object at 0x000001D616BD1488>,
+        <matplotlib.axes._subplots.AxesSubplot object at 0x000001D616C0DF88>,
+        <matplotlib.axes._subplots.AxesSubplot object at 0x000001D616C48E48>],
+       [<matplotlib.axes._subplots.AxesSubplot object at 0x000001D616C4D248>,
+        <matplotlib.axes._subplots.AxesSubplot object at 0x000001D616C883C8>,
+        <matplotlib.axes._subplots.AxesSubplot object at 0x000001D616CED988>,
+        <matplotlib.axes._subplots.AxesSubplot object at 0x000001D616D27A48>],
+       [<matplotlib.axes._subplots.AxesSubplot object at 0x000001D616D60B88>,
+        <matplotlib.axes._subplots.AxesSubplot object at 0x000001D616D97CC8>,
+        <matplotlib.axes._subplots.AxesSubplot object at 0x000001D6198F0DC8>,
+        <matplotlib.axes._subplots.AxesSubplot object at 0x000001D619928F88>]],
+      dtype=object)
+
+sns.set_style('whitegrid')
+sns.countplot(x='target',data=df,palette='RdBu_r')
+<matplotlib.axes._subplots.AxesSubplot at 0x1d619d04788>
+
+Data Processing
+After exploring the dataset, I observed that I need to convert some categorical variables into dummy variables and scale all the values before training the Machine Learning models. First, I'll use the get_dummies method to create dummy columns for categorical variables.
+
+dataset = pd.get_dummies(df, columns = ['sex', 'cp', 'fbs', 'restecg', 'exang', 'slope', 'ca', 'thal'])
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+standardScaler = StandardScaler()
+columns_to_scale = ['age', 'trestbps', 'chol', 'thalach', 'oldpeak']
+dataset[columns_to_scale] = standardScaler.fit_transform(dataset[columns_to_scale])
+dataset.head()
+age	trestbps	chol	thalach	oldpeak	target	sex_0	sex_1	cp_0	cp_1	...	slope_2	ca_0	ca_1	ca_2	ca_3	ca_4	thal_0	thal_1	thal_2	thal_3
+0	0.952197	0.763956	-0.256334	0.015443	1.087338	1	0	1	0	0	...	0	1	0	0	0	0	0	1	0	0
+1	-1.915313	-0.092738	0.072199	1.633471	2.122573	1	0	1	0	0	...	0	1	0	0	0	0	0	0	1	0
+2	-1.474158	-0.092738	-0.816773	0.977514	0.310912	1	1	0	0	1	...	1	1	0	0	0	0	0	0	1	0
+3	0.180175	-0.663867	-0.198357	1.239897	-0.206705	1	0	1	0	1	...	1	1	0	0	0	0	0	0	1	0
+4	0.290464	-0.663867	2.082050	0.583939	-0.379244	1	1	0	1	0	...	1	1	0	0	0	0	0	0	1	0
+5 rows × 31 columns
+
+y = dataset['target']
+X = dataset.drop(['target'], axis = 1)
+y.head()
+0    1
+1    1
+2    1
+3    1
+4    1
+Name: target, dtype: int64
+X.head()
+age	trestbps	chol	thalach	oldpeak	sex_0	sex_1	cp_0	cp_1	cp_2	...	slope_2	ca_0	ca_1	ca_2	ca_3	ca_4	thal_0	thal_1	thal_2	thal_3
+0	0.952197	0.763956	-0.256334	0.015443	1.087338	0	1	0	0	0	...	0	1	0	0	0	0	0	1	0	0
+1	-1.915313	-0.092738	0.072199	1.633471	2.122573	0	1	0	0	1	...	0	1	0	0	0	0	0	0	1	0
+2	-1.474158	-0.092738	-0.816773	0.977514	0.310912	1	0	0	1	0	...	1	1	0	0	0	0	0	0	1	0
+3	0.180175	-0.663867	-0.198357	1.239897	-0.206705	0	1	0	1	0	...	1	1	0	0	0	0	0	0	1	0
+4	0.290464	-0.663867	2.082050	0.583939	-0.379244	1	0	1	0	0	...	1	1	0	0	0	0	0	0	1	0
+5 rows × 30 columns
+
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.model_selection import cross_val_score
+knn_scores = []
+for k in range(1,21):
+    knn_classifier = KNeighborsClassifier(n_neighbors = k)
+    score=cross_val_score(knn_classifier,X,y,cv=10)
+    knn_scores.append(score.mean())
+plt.plot([k for k in range(1, 21)], knn_scores, color = 'red')
+for i in range(1,21):
+    plt.text(i, knn_scores[i-1], (i, knn_scores[i-1]))
+plt.xticks([i for i in range(1, 21)])
+plt.xlabel('Number of Neighbors (K)')
+plt.ylabel('Scores')
+plt.title('K Neighbors Classifier scores for different K values')
+Text(0.5, 1.0, 'K Neighbors Classifier scores for different K values')
+
+knn_classifier = KNeighborsClassifier(n_neighbors = 12)
+score=cross_val_score(knn_classifier,X,y,cv=10)
+score.mean()
+0.8506637004078605
+Random Forest Classifier
+from sklearn.ensemble import RandomForestClassifier
+
+randomforest_classifier= RandomForestClassifier(n_estimators=12)
+
+score=cross_val_score(randomforest_classifier,X,y,cv=10)
+score.mean()
+0.837667779013719
+Decision Tree Classifier
+from sklearn.tree import DecisionTreeClassifier
+from sklearn import metrics
+from sklearn.model_selection import train_test_split
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=1) # 70% training and 30% test
+decision_clf= DecisionTreeClassifier(criterion="entropy", max_depth=3)
+decision_clf= decision_clf.fit(X_train,y_train)
+
+y_pred= decision_clf.predict(X_test)
+print("Accuracy:",metrics.accuracy_score(y_test, y_pred))
+Accuracy: 0.7362637362637363
+Logistic Regression
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import classification_report, confusion_matrix
+model = LogisticRegression(solver='liblinear', random_state=0)
+model.fit(X,y)
+LogisticRegression(C=1.0, class_weight=None, dual=False, fit_intercept=True,
+                   intercept_scaling=1, l1_ratio=None, max_iter=100,
+                   multi_class='warn', n_jobs=None, penalty='l2',
+                   random_state=0, solver='liblinear', tol=0.0001, verbose=0,
+                   warm_start=False)
+model.predict(X)
+array([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1,
+       1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1,
+       1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+       1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+       1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1,
+       1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+       1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1,
+       1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0,
+       0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0,
+       0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+       0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0,
+       0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0,
+       1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1], dtype=int64)
+model.score(X, y)
+0.8778877887788779
+confusion_matrix(y, model.predict(X))
+array([[114,  24],
+       [ 13, 152]], dtype=int64)
+print(classification_report(y, model.predict(X)))
+              precision    recall  f1-score   support
+
+           0       0.90      0.83      0.86       138
+           1       0.86      0.92      0.89       165
+
+    accuracy                           0.88       303
+   macro avg       0.88      0.87      0.88       303
+weighted avg       0.88      0.88      0.88       303
+
+model = LogisticRegression(solver='liblinear', C=10.0, random_state=0)
+model.fit(X, y)
+LogisticRegression(C=10.0, class_weight=None, dual=False, fit_intercept=True,
+                   intercept_scaling=1, l1_ratio=None, max_iter=100,
+                   multi_class='warn', n_jobs=None, penalty='l2',
+                   random_state=0, solver='liblinear', tol=0.0001, verbose=0,
+                   warm_start=False)
+model.predict(X)
+array([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1,
+       1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1,
+       1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+       1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+       1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 0, 0, 1, 1, 1, 1, 0, 1, 1, 1,
+       1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+       1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+       1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0,
+       0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0,
+       0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+       0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0,
+       0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0,
+       1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1], dtype=int64)
+model.score(X,y)
+0.8844884488448845
+confusion_matrix(y, model.predict(X))
+array([[115,  23],
+       [ 12, 153]], dtype=int64)
+print(classification_report(y, model.predict(X)))
+              precision    recall  f1-score   support
+
+           0       0.91      0.83      0.87       138
+           1       0.87      0.93      0.90       165
+
+    accuracy                           0.88       303
+   macro avg       0.89      0.88      0.88       303
+weighted avg       0.89      0.88      0.88       303
+
+ 
